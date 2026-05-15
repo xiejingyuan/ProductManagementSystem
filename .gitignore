@@ -13,6 +13,7 @@ dist/
 
 # Environment
 .env
+appsettings.Development.json
 
 # Database
 *.db
