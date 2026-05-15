@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -37,9 +39,29 @@ public class AuthController : ControllerBase
     {
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == req.Email);
 
-        if (user == null || !BCrypt.Net.BCrypt.Verify(req.Password, user.PasswordHash))
+        // Always run BCrypt even when user is not found to prevent timing-based email enumeration
+        var hash = user?.PasswordHash ?? "$2a$11$dummyhashvaluethatisnotrealandexists000000000000000000";
+        var passwordValid = BCrypt.Net.BCrypt.Verify(req.Password, hash);
+
+        if (user == null || !passwordValid)
             return Unauthorized(new { message = "Invalid credentials." });
 
         return Ok(new { token = _jwt.GenerateToken(user) });
+    }
+
+    [Authorize]
+    [HttpPost("change-password")]
+    public async Task<IActionResult> ChangePassword(ChangePasswordRequest req)
+    {
+        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var user = await _db.Users.FindAsync(userId);
+
+        if (user == null || !BCrypt.Net.BCrypt.Verify(req.CurrentPassword, user.PasswordHash))
+            return Unauthorized(new { message = "Current password is incorrect." });
+
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(req.NewPassword);
+        await _db.SaveChangesAsync();
+
+        return Ok(new { message = "Password changed successfully." });
     }
 }

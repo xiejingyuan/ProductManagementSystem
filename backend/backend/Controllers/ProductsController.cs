@@ -40,7 +40,7 @@ public class ProductsController : ControllerBase
             Name = req.Name,
             Category = req.Category,
             Price = req.Price,
-            Stock = req.Stock,
+            Inventory = req.Inventory,
             Description = req.Description,
             UserId = GetUserId()
         };
@@ -62,7 +62,7 @@ public class ProductsController : ControllerBase
         product.Name = req.Name;
         product.Category = req.Category;
         product.Price = req.Price;
-        product.Stock = req.Stock;
+        product.Inventory = req.Inventory;
         product.Description = req.Description;
         product.UpdatedAt = DateTime.UtcNow;
 
