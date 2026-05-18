@@ -6,6 +6,7 @@ public class AppDbContext : DbContext
 
     public DbSet<User> Users => Set<User>();
     public DbSet<Product> Products => Set<Product>();
+    public DbSet<ActiveSession> ActiveSessions => Set<ActiveSession>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -17,5 +18,14 @@ public class AppDbContext : DbContext
             .HasOne(p => p.User)
             .WithMany(u => u.Products)
             .HasForeignKey(p => p.UserId);
+
+        modelBuilder.Entity<ActiveSession>()
+            .HasIndex(s => s.Jti)
+            .IsUnique();
+
+        modelBuilder.Entity<ActiveSession>()
+            .HasOne(s => s.User)
+            .WithMany()
+            .HasForeignKey(s => s.UserId);
     }
 }

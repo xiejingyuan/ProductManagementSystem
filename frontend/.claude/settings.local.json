@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "additionalDirectories": [
+      "e:\\ProductManagementSystem\\backend\\backend\\Controllers",
+      "e:\\ProductManagementSystem\\backend\\backend"
+    ]
+  }
+}

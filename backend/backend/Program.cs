@@ -38,6 +38,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddScoped<JwtService>();
 builder.Services.AddHttpClient<AiService>();
+builder.Services.AddHostedService<TokenCleanupService>();
 
 var app = builder.Build();
 
@@ -56,6 +57,26 @@ if (app.Environment.IsDevelopment())
 app.UseCors("Frontend");
 app.UseHttpsRedirection();
 app.UseAuthentication();
+
+app.Use(async (context, next) =>
+{
+    if (context.User.Identity?.IsAuthenticated == true)
+    {
+        var jti = context.User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Jti)?.Value;
+        if (jti != null)
+        {
+            var db = context.RequestServices.GetRequiredService<AppDbContext>();
+            if (!await db.ActiveSessions.AnyAsync(s => s.Jti == jti))
+            {
+                context.Response.StatusCode = 401;
+                await context.Response.WriteAsJsonAsync(new { message = "Session not found. Please log in again." });
+                return;
+            }
+        }
+    }
+    await next();
+});
+
 app.UseAuthorization();
 app.MapControllers();
 
