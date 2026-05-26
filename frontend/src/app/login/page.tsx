@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { api, saveToken, clearToken } from "@/lib/api";
+import { api, saveToken } from "@/lib/api";
 import type { AuthResponse } from "@/lib/types";
 
 export default function LoginPage() {
@@ -13,15 +13,13 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => { clearToken(); }, []);
-
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.SyntheticEvent) {
     e.preventDefault();
     setError(null);
     setLoading(true);
     try {
-      const res = await api.post<AuthResponse>("/auth/login", { email, password });
-      saveToken(res.token);
+      const res = await api.postNoRedirect<AuthResponse>("/auth/login", { email, password });
+      await saveToken(res.token);
       router.push("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
@@ -31,9 +29,10 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex flex-1 items-center justify-center bg-zinc-50">
+    <div className="flex flex-1 flex-col items-center justify-center bg-zinc-50">
+      <h1 className="text-2xl font-bold mb-8">Product Management System</h1>
       <div className="w-full max-w-sm bg-white border border-zinc-200 rounded-lg p-8">
-        <h1 className="text-2xl font-semibold mb-6">Sign in</h1>
+        <h2 className="text-xl font-semibold mb-6">Sign in</h2>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium">Email</label>

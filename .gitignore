@@ -16,7 +16,7 @@ dist/
 appsettings.Development.json
 
 # Database
-*.db
+*.db*
 *.sqlite
 
 # OS

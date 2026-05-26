@@ -41,7 +41,7 @@ public class AuthController : ControllerBase
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == req.Email);
 
         // Always run BCrypt even when user is not found to prevent timing-based email enumeration
-        var hash = user?.PasswordHash ?? "$2a$11$dummyhashvaluethatisnotrealandexists000000000000000000";
+        var hash = user?.PasswordHash ?? "$2a$11$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.";
         var passwordValid = BCrypt.Net.BCrypt.Verify(req.Password, hash);
 
         if (user == null || !passwordValid)
@@ -114,6 +114,9 @@ public class AuthController : ControllerBase
 
         if (user == null || !BCrypt.Net.BCrypt.Verify(req.CurrentPassword, user.PasswordHash))
             return Unauthorized(new { message = "Current password is incorrect." });
+
+        if (BCrypt.Net.BCrypt.Verify(req.NewPassword, user.PasswordHash))
+            return BadRequest(new { message = "New password must be different from current password." });
 
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(req.NewPassword);
         await _db.SaveChangesAsync();

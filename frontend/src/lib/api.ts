@@ -1,27 +1,25 @@
 const BASE = "/api";
 
-function getToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("token");
-}
-
-async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const token = getToken();
+async function request<T>(
+  path: string,
+  options: RequestInit = {},
+  redirectOn401 = true,
+): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
     ...options,
     headers: {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(options.headers ?? {}),
     },
   });
 
   if (res.status === 401) {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("token");
-      window.location.href = "/login";
+    if (redirectOn401 && typeof window !== "undefined") {
+      fetch("/api/clear-auth-cookie", { method: "POST" }).finally(() => {
+        window.location.href = "/login";
+      });
     }
-    throw new Error("Session expired. Please log in again.");
+    throw new Error("Invalid email or password.");
   }
 
   if (!res.ok) {
@@ -47,24 +45,22 @@ export const api = {
   put: <T>(path: string, body: unknown) =>
     request<T>(path, { method: "PUT", body: JSON.stringify(body) }),
   delete: (path: string) => request<void>(path, { method: "DELETE" }),
+  postNoRedirect: <T>(path: string, body: unknown) =>
+    request<T>(path, { method: "POST", body: JSON.stringify(body) }, false),
 };
 
-export function saveToken(token: string): void {
-  localStorage.setItem("token", token);
-}
-
-export function clearToken(): void {
-  localStorage.removeItem("token");
-}
-
-export function hasToken(): boolean {
-  return !!getToken();
+export async function saveToken(token: string): Promise<void> {
+  await fetch("/api/set-auth-cookie", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token }),
+  });
 }
 
 export async function logout(): Promise<void> {
   try {
     await api.post<void>("/auth/logout", {});
   } finally {
-    clearToken();
+    await fetch("/api/clear-auth-cookie", { method: "POST" });
   }
 }

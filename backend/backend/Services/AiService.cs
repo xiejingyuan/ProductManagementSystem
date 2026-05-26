@@ -3,6 +3,9 @@ using System.Text.Json.Serialization;
 
 public class AiService
 {
+    private static readonly JsonSerializerOptions _jsonOptions =
+        new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+
     private readonly HttpClient _httpClient;
     private readonly string _apiKey;
 
@@ -36,8 +39,7 @@ public class AiService
         var response = await _httpClient.SendAsync(request);
         response.EnsureSuccessStatusCode();
 
-        var result = await response.Content.ReadFromJsonAsync<AnthropicResponse>(
-            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        var result = await response.Content.ReadFromJsonAsync<AnthropicResponse>(_jsonOptions);
 
         return result?.Content.FirstOrDefault()?.Text ?? string.Empty;
     }

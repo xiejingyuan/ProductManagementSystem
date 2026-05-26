@@ -1,19 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { api, saveToken, clearToken } from "@/lib/api";
+import { api, saveToken } from "@/lib/api";
 import type { AuthResponse } from "@/lib/types";
-
-function validatePassword(pwd: string): string | null {
-  if (pwd.length < 8) return "Password must be at least 8 characters.";
-  if (!/[A-Z]/.test(pwd)) return "Password must contain an uppercase letter.";
-  if (!/[a-z]/.test(pwd)) return "Password must contain a lowercase letter.";
-  if (!/[0-9]/.test(pwd)) return "Password must contain a number.";
-  if (!/[^A-Za-z0-9]/.test(pwd)) return "Password must contain a special character.";
-  return null;
-}
+import { validatePassword } from "@/lib/validation";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -22,9 +14,7 @@ export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => { clearToken(); }, []);
-
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.SyntheticEvent) {
     e.preventDefault();
     setError(null);
 
@@ -37,7 +27,7 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       const res = await api.post<AuthResponse>("/auth/register", { email, password });
-      saveToken(res.token);
+      await saveToken(res.token);
       router.push("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Registration failed");
@@ -47,9 +37,10 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex flex-1 items-center justify-center bg-zinc-50">
+    <div className="flex flex-1 flex-col items-center justify-center bg-zinc-50">
+      <h1 className="text-2xl font-bold mb-8">Product Management System</h1>
       <div className="w-full max-w-sm bg-white border border-zinc-200 rounded-lg p-8">
-        <h1 className="text-2xl font-semibold mb-6">Create account</h1>
+        <h2 className="text-xl font-semibold mb-6">Create account</h2>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium">Email</label>
