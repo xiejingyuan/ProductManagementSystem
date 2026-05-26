@@ -34,6 +34,26 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
         };
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = async context =>
+            {
+                var jti = context.Principal?
+                    .FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Jti)?.Value;
+
+                if (jti == null)
+                {
+                    context.Fail("Token missing JTI claim.");
+                    return;
+                }
+
+                var db = context.HttpContext.RequestServices
+                    .GetRequiredService<AppDbContext>();
+
+                if (!await db.ActiveSessions.AnyAsync(s => s.Jti == jti))
+                    context.Fail("Session not found. Please log in again.");
+            }
+        };
     });
 
 builder.Services.AddScoped<JwtService>();
@@ -57,26 +77,6 @@ if (app.Environment.IsDevelopment())
 app.UseCors("Frontend");
 app.UseHttpsRedirection();
 app.UseAuthentication();
-
-app.Use(async (context, next) =>
-{
-    if (context.User.Identity?.IsAuthenticated == true)
-    {
-        var jti = context.User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Jti)?.Value;
-        if (jti != null)
-        {
-            var db = context.RequestServices.GetRequiredService<AppDbContext>();
-            if (!await db.ActiveSessions.AnyAsync(s => s.Jti == jti))
-            {
-                context.Response.StatusCode = 401;
-                await context.Response.WriteAsJsonAsync(new { message = "Session not found. Please log in again." });
-                return;
-            }
-        }
-    }
-    await next();
-});
-
 app.UseAuthorization();
 app.MapControllers();
 

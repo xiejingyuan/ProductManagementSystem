@@ -1,10 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { api, saveToken } from "@/lib/api";
+import { api, saveToken, clearToken } from "@/lib/api";
 import type { AuthResponse } from "@/lib/types";
+
+function validatePassword(pwd: string): string | null {
+  if (pwd.length < 8) return "Password must be at least 8 characters.";
+  if (!/[A-Z]/.test(pwd)) return "Password must contain an uppercase letter.";
+  if (!/[a-z]/.test(pwd)) return "Password must contain a lowercase letter.";
+  if (!/[0-9]/.test(pwd)) return "Password must contain a number.";
+  if (!/[^A-Za-z0-9]/.test(pwd)) return "Password must contain a special character.";
+  return null;
+}
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -13,9 +22,18 @@ export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => { clearToken(); }, []);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+
+    const pwdError = validatePassword(password);
+    if (pwdError) {
+      setError(pwdError);
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await api.post<AuthResponse>("/auth/register", { email, password });

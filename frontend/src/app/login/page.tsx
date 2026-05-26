@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { api, saveToken } from "@/lib/api";
+import { api, saveToken, clearToken } from "@/lib/api";
 import type { AuthResponse } from "@/lib/types";
 
 export default function LoginPage() {
@@ -12,6 +12,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => { clearToken(); }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
