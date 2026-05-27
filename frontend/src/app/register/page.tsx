@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { api, saveToken } from "@/lib/api";
 import type { AuthResponse } from "@/lib/types";
 import { validatePassword } from "@/lib/validation";
+import PasswordInput from "@/components/PasswordInput";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -54,13 +55,11 @@ export default function RegisterPage() {
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium">Password</label>
-            <input
-              type="password"
+            <PasswordInput
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={8}
-              className="border border-zinc-300 rounded px-3 py-2 text-sm outline-none focus:border-black"
             />
             <p className="text-xs text-zinc-400">
               Min 8 chars — uppercase, lowercase, number, special character.

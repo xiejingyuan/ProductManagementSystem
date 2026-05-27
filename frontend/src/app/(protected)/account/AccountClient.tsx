@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
+import PasswordInput from "@/components/PasswordInput";
 import type { MessageResponse, ActiveSession } from "@/lib/types";
 import { validatePassword } from "@/lib/validation";
 
@@ -73,22 +74,18 @@ export default function AccountClient({ initialSessions }: { initialSessions: Ac
         <form onSubmit={handleChangePassword} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium">Current Password</label>
-            <input
-              type="password"
+            <PasswordInput
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
               required
-              className="border border-zinc-300 rounded px-3 py-2 text-sm outline-none focus:border-black"
             />
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium">New Password</label>
-            <input
-              type="password"
+            <PasswordInput
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               required
-              className="border border-zinc-300 rounded px-3 py-2 text-sm outline-none focus:border-black"
             />
             <p className="text-xs text-zinc-400">
               Min 8 chars — uppercase, lowercase, number, special character.
@@ -96,12 +93,10 @@ export default function AccountClient({ initialSessions }: { initialSessions: Ac
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium">Confirm New Password</label>
-            <input
-              type="password"
+            <PasswordInput
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
-              className="border border-zinc-300 rounded px-3 py-2 text-sm outline-none focus:border-black"
             />
           </div>
           {pwError && <p className="text-red-600 text-sm">{pwError}</p>}
