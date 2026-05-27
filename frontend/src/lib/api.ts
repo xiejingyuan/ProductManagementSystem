@@ -18,8 +18,10 @@ async function request<T>(
       fetch("/api/clear-auth-cookie", { method: "POST" }).finally(() => {
         window.location.href = "/login";
       });
+      throw new Error("Unauthorized");
     }
-    throw new Error("Invalid email or password.");
+    const body = await res.json().catch(() => null);
+    throw new Error(body?.message ?? "Unauthorized");
   }
 
   if (!res.ok) {

@@ -2,8 +2,7 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 const PROTECTED = ["/dashboard", "/products", "/account"];
-const AUTH_PAGES = ["/login", "/register"];
-const SKIP_AUTH_HEADER = ["/api/set-auth-cookie", "/api/clear-auth-cookie"];
+const SKIP_AUTH_HEADER = ["/api/set-auth-cookie", "/api/clear-auth-cookie", "/api/auth-expired"];
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -14,10 +13,6 @@ export function proxy(request: NextRequest) {
       return NextResponse.redirect(new URL("/login", request.url));
     }
     return NextResponse.next();
-  }
-
-  if (AUTH_PAGES.includes(pathname) && token) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
   if (

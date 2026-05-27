@@ -1,16 +1,10 @@
 import Link from "next/link";
-import { cookies } from "next/headers";
 import type { Product } from "@/lib/types";
+import { serverFetch } from "@/lib/server-api";
 import ProductTable from "./ProductTable";
 
 export default async function DashboardPage() {
-  const token = (await cookies()).get("auth-token")?.value;
-  const res = await fetch(
-    `${process.env.BACKEND_URL ?? "http://localhost:5281"}/api/products`,
-    { headers: { Authorization: `Bearer ${token}` } },
-  );
-  if (!res.ok) throw new Error("Failed to load products");
-  const products: Product[] = await res.json();
+  const products = await serverFetch<Product[]>("/api/products");
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-8">

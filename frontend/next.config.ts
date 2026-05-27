@@ -2,6 +2,10 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: ["192.168.119.1", "192.168.2.1", "10.0.0.27"],
+  webpack(config, { dev }) {
+    if (dev) config.cache = { type: "memory" };
+    return config;
+  },
   async rewrites() {
     return [
       {

@@ -1,16 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { logout as logoutApi } from "@/lib/api";
 
 export default function Navbar() {
-  const router = useRouter();
   const pathname = usePathname();
 
   async function logout() {
     await logoutApi();
-    router.push("/login");
+    window.location.href = "/login";
   }
 
   const linkClass = (href: string) =>

@@ -2,9 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { api, logout as logoutApi } from "@/lib/api";
+import { api } from "@/lib/api";
 import type { MessageResponse, ActiveSession } from "@/lib/types";
 import { validatePassword } from "@/lib/validation";
+
+function formatDate(dateStr: string): string {
+  const d = new Date(dateStr);
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+}
 
 export default function AccountClient({ initialSessions }: { initialSessions: ActiveSession[] }) {
   const router = useRouter();
@@ -30,7 +35,7 @@ export default function AccountClient({ initialSessions }: { initialSessions: Ac
 
     setPwLoading(true);
     try {
-      await api.post<MessageResponse>("/auth/change-password", {
+      await api.postNoRedirect<MessageResponse>("/auth/change-password", {
         currentPassword,
         newPassword,
       });
@@ -49,7 +54,7 @@ export default function AccountClient({ initialSessions }: { initialSessions: Ac
     try {
       await api.delete(`/auth/sessions/${id}`);
       if (isCurrent) {
-        await logoutApi();
+        await fetch("/api/clear-auth-cookie", { method: "POST" });
         router.push("/login");
         return;
       }
@@ -124,7 +129,7 @@ export default function AccountClient({ initialSessions }: { initialSessions: Ac
                   {s.deviceInfo || "Unknown device"}
                 </span>
                 <span className="text-zinc-400 text-xs">
-                  Signed in {new Date(s.createdAt).toLocaleDateString()}
+                  Signed in {formatDate(s.createdAt)}
                   {s.isCurrent && (
                     <span className="ml-2 text-green-600 font-medium">Current</span>
                   )}
