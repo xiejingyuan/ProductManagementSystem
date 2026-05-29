@@ -14,4 +14,7 @@ public class Product
 
     [JsonIgnore]
     public User User { get; set; } = null!;
+
+    public List<ProductVariant> Variants { get; set; } = [];
+    public List<ProductImage> Images { get; set; } = [];
 }

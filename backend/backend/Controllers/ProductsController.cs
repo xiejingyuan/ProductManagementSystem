@@ -1,3 +1,5 @@
+using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -9,8 +11,13 @@ using System.Security.Claims;
 public class ProductsController : ControllerBase
 {
     private readonly AppDbContext _db;
+    private readonly Cloudinary _cloudinary;
 
-    public ProductsController(AppDbContext db) => _db = db;
+    public ProductsController(AppDbContext db, Cloudinary cloudinary)
+    {
+        _db = db;
+        _cloudinary = cloudinary;
+    }
 
     private int GetUserId() =>
         int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -19,6 +26,8 @@ public class ProductsController : ControllerBase
     public async Task<IActionResult> GetAll()
     {
         var products = await _db.Products
+            .Include(p => p.Variants)
+            .Include(p => p.Images.OrderBy(i => i.SortOrder))
             .Where(p => p.UserId == GetUserId())
             .ToListAsync();
         return Ok(products);
@@ -28,6 +37,8 @@ public class ProductsController : ControllerBase
     public async Task<IActionResult> GetById(int id)
     {
         var product = await _db.Products
+            .Include(p => p.Variants)
+            .Include(p => p.Images.OrderBy(i => i.SortOrder))
             .FirstOrDefaultAsync(p => p.Id == id && p.UserId == GetUserId());
         return product == null ? NotFound() : Ok(product);
     }
@@ -48,13 +59,33 @@ public class ProductsController : ControllerBase
         _db.Products.Add(product);
         await _db.SaveChangesAsync();
 
-        return CreatedAtAction(nameof(GetById), new { id = product.Id }, product);
+        foreach (var v in req.Variants)
+        {
+            _db.ProductVariants.Add(new ProductVariant
+            {
+                ProductId = product.Id,
+                Name = v.Name,
+                Price = v.Price,
+                Inventory = v.Inventory,
+                Sku = v.Sku
+            });
+        }
+        await _db.SaveChangesAsync();
+
+        var created = await _db.Products
+            .Include(p => p.Variants)
+            .Include(p => p.Images)
+            .FirstAsync(p => p.Id == product.Id);
+
+        return CreatedAtAction(nameof(GetById), new { id = product.Id }, created);
     }
 
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(int id, ProductRequest req)
     {
         var product = await _db.Products
+            .Include(p => p.Variants)
+            .Include(p => p.Images.OrderBy(i => i.SortOrder))
             .FirstOrDefaultAsync(p => p.Id == id && p.UserId == GetUserId());
 
         if (product == null) return NotFound();
@@ -66,17 +97,46 @@ public class ProductsController : ControllerBase
         product.Description = req.Description;
         product.UpdatedAt = DateTime.UtcNow;
 
+        _db.ProductVariants.RemoveRange(product.Variants);
+        foreach (var v in req.Variants)
+        {
+            _db.ProductVariants.Add(new ProductVariant
+            {
+                ProductId = product.Id,
+                Name = v.Name,
+                Price = v.Price,
+                Inventory = v.Inventory,
+                Sku = v.Sku
+            });
+        }
+
         await _db.SaveChangesAsync();
-        return Ok(product);
+
+        var updated = await _db.Products
+            .Include(p => p.Variants)
+            .Include(p => p.Images.OrderBy(i => i.SortOrder))
+            .FirstAsync(p => p.Id == id);
+
+        return Ok(updated);
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
         var product = await _db.Products
+            .Include(p => p.Images)
             .FirstOrDefaultAsync(p => p.Id == id && p.UserId == GetUserId());
 
         if (product == null) return NotFound();
+
+        foreach (var image in product.Images)
+        {
+            if (!string.IsNullOrEmpty(image.PublicId))
+                await _cloudinary.DestroyAsync(new DeletionParams(image.PublicId)
+                {
+                    ResourceType = image.ResourceType == "video" ? ResourceType.Video : ResourceType.Image
+                });
+        }
 
         _db.Products.Remove(product);
         await _db.SaveChangesAsync();

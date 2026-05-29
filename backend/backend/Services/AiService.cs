@@ -12,14 +12,14 @@ public class AiService
     public AiService(HttpClient httpClient, IConfiguration config)
     {
         _httpClient = httpClient;
-        _apiKey = config["Anthropic:ApiKey"] ?? string.Empty;
+        _apiKey = config["Groq:ApiKey"] ?? string.Empty;
     }
 
     public async Task<string> GenerateDescriptionAsync(string productName, string category)
     {
         var requestBody = new
         {
-            model = "claude-sonnet-4-6",
+            model = "llama-3.3-70b-versatile",
             max_tokens = 256,
             messages = new[]
             {
@@ -31,27 +31,30 @@ public class AiService
             }
         };
 
-        using var request = new HttpRequestMessage(HttpMethod.Post, "https://api.anthropic.com/v1/messages");
-        request.Headers.Add("x-api-key", _apiKey);
-        request.Headers.Add("anthropic-version", "2023-06-01");
+        using var request = new HttpRequestMessage(HttpMethod.Post, "https://api.groq.com/openai/v1/chat/completions");
+        request.Headers.Add("Authorization", $"Bearer {_apiKey}");
         request.Content = JsonContent.Create(requestBody);
 
         var response = await _httpClient.SendAsync(request);
         response.EnsureSuccessStatusCode();
 
-        var result = await response.Content.ReadFromJsonAsync<AnthropicResponse>(_jsonOptions);
+        var result = await response.Content.ReadFromJsonAsync<GroqResponse>(_jsonOptions);
 
-        return result?.Content.FirstOrDefault()?.Text ?? string.Empty;
+        return result?.Choices.FirstOrDefault()?.Message.Content ?? string.Empty;
     }
 }
 
-public class AnthropicResponse
+public class GroqResponse
 {
-    public List<AnthropicContent> Content { get; set; } = new();
+    public List<GroqChoice> Choices { get; set; } = new();
 }
 
-public class AnthropicContent
+public class GroqChoice
 {
-    public string Type { get; set; } = string.Empty;
-    public string Text { get; set; } = string.Empty;
+    public GroqMessage Message { get; set; } = new();
+}
+
+public class GroqMessage
+{
+    public string Content { get; set; } = string.Empty;
 }

@@ -5,12 +5,15 @@ async function request<T>(
   options: RequestInit = {},
   redirectOn401 = true,
 ): Promise<T> {
+  const isFormData = options.body instanceof FormData;
   const res = await fetch(`${BASE}${path}`, {
     ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers ?? {}),
-    },
+    headers: isFormData
+      ? (options.headers ?? {})
+      : {
+          "Content-Type": "application/json",
+          ...(options.headers ?? {}),
+        },
   });
 
   if (res.status === 401) {
@@ -49,6 +52,8 @@ export const api = {
   delete: (path: string) => request<void>(path, { method: "DELETE" }),
   postNoRedirect: <T>(path: string, body: unknown) =>
     request<T>(path, { method: "POST", body: JSON.stringify(body) }, false),
+  upload: <T>(path: string, formData: FormData) =>
+    request<T>(path, { method: "POST", body: formData }),
 };
 
 export async function saveToken(token: string): Promise<void> {

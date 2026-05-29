@@ -1,3 +1,4 @@
+using CloudinaryDotNet;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -55,6 +56,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             }
         };
     });
+
+var cloudinarySection = builder.Configuration.GetSection("Cloudinary");
+var cloudinary = new Cloudinary(new Account(
+    cloudinarySection["CloudName"],
+    cloudinarySection["ApiKey"],
+    cloudinarySection["ApiSecret"]
+));
+builder.Services.AddSingleton(cloudinary);
 
 builder.Services.AddScoped<JwtService>();
 builder.Services.AddHttpClient<AiService>();

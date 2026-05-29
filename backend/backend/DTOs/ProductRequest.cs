@@ -15,4 +15,6 @@ public class ProductRequest
     public int Inventory { get; set; }
 
     public string? Description { get; set; }
+
+    public List<ProductVariantRequest> Variants { get; set; } = [];
 }
