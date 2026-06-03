@@ -26,7 +26,6 @@ public class ProductsController : ControllerBase
     public async Task<IActionResult> GetAll()
     {
         var products = await _db.Products
-            .Include(p => p.Variants)
             .Include(p => p.Images.OrderBy(i => i.SortOrder))
             .Where(p => p.UserId == GetUserId())
             .ToListAsync();
@@ -37,7 +36,6 @@ public class ProductsController : ControllerBase
     public async Task<IActionResult> GetById(int id)
     {
         var product = await _db.Products
-            .Include(p => p.Variants)
             .Include(p => p.Images.OrderBy(i => i.SortOrder))
             .FirstOrDefaultAsync(p => p.Id == id && p.UserId == GetUserId());
         return product == null ? NotFound() : Ok(product);
@@ -59,21 +57,7 @@ public class ProductsController : ControllerBase
         _db.Products.Add(product);
         await _db.SaveChangesAsync();
 
-        foreach (var v in req.Variants)
-        {
-            _db.ProductVariants.Add(new ProductVariant
-            {
-                ProductId = product.Id,
-                Name = v.Name,
-                Price = v.Price,
-                Inventory = v.Inventory,
-                Sku = v.Sku
-            });
-        }
-        await _db.SaveChangesAsync();
-
         var created = await _db.Products
-            .Include(p => p.Variants)
             .Include(p => p.Images)
             .FirstAsync(p => p.Id == product.Id);
 
@@ -84,7 +68,6 @@ public class ProductsController : ControllerBase
     public async Task<IActionResult> Update(int id, ProductRequest req)
     {
         var product = await _db.Products
-            .Include(p => p.Variants)
             .Include(p => p.Images.OrderBy(i => i.SortOrder))
             .FirstOrDefaultAsync(p => p.Id == id && p.UserId == GetUserId());
 
@@ -97,27 +80,9 @@ public class ProductsController : ControllerBase
         product.Description = req.Description;
         product.UpdatedAt = DateTime.UtcNow;
 
-        _db.ProductVariants.RemoveRange(product.Variants);
-        foreach (var v in req.Variants)
-        {
-            _db.ProductVariants.Add(new ProductVariant
-            {
-                ProductId = product.Id,
-                Name = v.Name,
-                Price = v.Price,
-                Inventory = v.Inventory,
-                Sku = v.Sku
-            });
-        }
-
         await _db.SaveChangesAsync();
 
-        var updated = await _db.Products
-            .Include(p => p.Variants)
-            .Include(p => p.Images.OrderBy(i => i.SortOrder))
-            .FirstAsync(p => p.Id == id);
-
-        return Ok(updated);
+        return Ok(product);
     }
 
     [HttpDelete("{id}")]
@@ -129,12 +94,12 @@ public class ProductsController : ControllerBase
 
         if (product == null) return NotFound();
 
-        foreach (var image in product.Images)
+        foreach (var img in product.Images)
         {
-            if (!string.IsNullOrEmpty(image.PublicId))
-                await _cloudinary.DestroyAsync(new DeletionParams(image.PublicId)
+            if (!string.IsNullOrEmpty(img.PublicId))
+                await _cloudinary.DestroyAsync(new DeletionParams(img.PublicId)
                 {
-                    ResourceType = image.ResourceType == "video" ? ResourceType.Video : ResourceType.Image
+                    ResourceType = img.ResourceType == "video" ? ResourceType.Video : ResourceType.Image
                 });
         }
 

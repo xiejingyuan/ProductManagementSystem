@@ -12,9 +12,11 @@ export default function Navbar() {
     window.location.href = "/login";
   }
 
-  const linkClass = (href: string) =>
+  const linkClass = (href: string, exact = true) =>
     `text-sm font-medium transition-colors hover:text-black ${
-      pathname === href ? "text-black" : "text-zinc-500"
+      (exact ? pathname === href : pathname.startsWith(href))
+        ? "text-black"
+        : "text-zinc-500"
     }`;
 
   return (
@@ -24,10 +26,10 @@ export default function Navbar() {
       </Link>
       <div className="flex items-center gap-6">
         <Link href="/dashboard" className={linkClass("/dashboard")}>
-          Products
+          Dashboard
         </Link>
-        <Link href="/products/new" className={linkClass("/products/new")}>
-          New Product
+        <Link href="/products" className={linkClass("/products", false)}>
+          Products
         </Link>
         <Link href="/account" className={linkClass("/account")}>
           Account

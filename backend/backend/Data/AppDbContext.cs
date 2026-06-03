@@ -7,7 +7,6 @@ public class AppDbContext : DbContext
     public DbSet<User> Users => Set<User>();
     public DbSet<Product> Products => Set<Product>();
     public DbSet<ActiveSession> ActiveSessions => Set<ActiveSession>();
-    public DbSet<ProductVariant> ProductVariants => Set<ProductVariant>();
     public DbSet<ProductImage> ProductImages => Set<ProductImage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -20,12 +19,6 @@ public class AppDbContext : DbContext
             .HasOne(p => p.User)
             .WithMany(u => u.Products)
             .HasForeignKey(p => p.UserId);
-
-        modelBuilder.Entity<ProductVariant>()
-            .HasOne(v => v.Product)
-            .WithMany(p => p.Variants)
-            .HasForeignKey(v => v.ProductId)
-            .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<ProductImage>()
             .HasOne(i => i.Product)

@@ -7,6 +7,7 @@ public class ProductImage
     public string Url { get; set; } = string.Empty;
     public string PublicId { get; set; } = string.Empty;
     public string ResourceType { get; set; } = "image";
+    public bool IsMain { get; set; }
     public string? AltText { get; set; }
     public int SortOrder { get; set; }
 

@@ -1,11 +1,14 @@
 using CloudinaryDotNet;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// No global limit — each upload endpoint enforces its own via [RequestSizeLimit]
+builder.Services.Configure<KestrelServerOptions>(o => o.Limits.MaxRequestBodySize = null);
 builder.Services.AddControllers();
 builder.Services.AddSwaggerGen();
 
