@@ -17,7 +17,7 @@ export default function EditProductForm({ product }: { product: Product }) {
   const [inventory, setInventory] = useState(String(product.inventory));
   const [description, setDescription] = useState(product.description ?? "");
 
-  const [existingMainImage, setExistingMainImage] = useState(
+  const [existingMainImage, setExistingMainImage] = useState<ProductImage | null>(
     product.images.find(img => img.isMain) ?? product.images[0] ?? null
   );
   const [existingGallery, setExistingGallery] = useState(
