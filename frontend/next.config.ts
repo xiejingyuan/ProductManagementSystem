@@ -5,10 +5,6 @@ const nextConfig: NextConfig = {
   experimental: {
     proxyClientMaxBodySize: 200 * 1024 * 1024, // 200 MB (covers batch gallery uploads)
   },
-  webpack(config, { dev }) {
-    if (dev) config.cache = { type: "memory" };
-    return config;
-  },
   async rewrites() {
     return [
       {
