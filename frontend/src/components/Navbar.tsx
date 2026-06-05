@@ -21,7 +21,7 @@ export default function Navbar() {
 
   return (
     <nav className="sticky top-0 z-50 border-b border-zinc-200 bg-white px-6 py-3 flex items-center justify-between">
-      <Link href="/dashboard" className="font-semibold text-base">
+      <Link href="/dashboard" className="font-semibold text-base hidden sm:block">
         Product Manager
       </Link>
       <div className="flex items-center gap-6">
