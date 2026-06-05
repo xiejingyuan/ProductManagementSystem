@@ -33,7 +33,7 @@ A full-stack product management web application with image/video uploads, AI-gen
 
 ## Screenshots
 
-<img src="C:\Users\tiger\AppData\Roaming\Typora\typora-user-images\image-20260605110820908.png" alt="image-20260605110820908" style="zoom:50%;" />
+![screenshot](screenshot.png)
 
 ---
 
