@@ -104,7 +104,7 @@ export default function ProductTable({ items, totalCount, page, pageSize, search
       />
 
       <div className="overflow-x-auto">
-        <table className="min-w-full text-sm border-collapse">
+        <table className="w-full min-w-[640px] text-sm border-collapse">
           <thead>
             <tr className="border-b border-zinc-200 text-left text-zinc-500">
               <th className="py-2 pr-4 font-medium w-12"></th>
