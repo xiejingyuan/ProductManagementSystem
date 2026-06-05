@@ -23,13 +23,72 @@ public class ProductsController : ControllerBase
         int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll(
+        [FromQuery] int? page,
+        [FromQuery] int pageSize = 25,
+        [FromQuery] string? search = null,
+        [FromQuery] string? sortBy = null,
+        [FromQuery] string? sortDir = null)
     {
-        var products = await _db.Products
+        var query = _db.Products
             .Include(p => p.Images.OrderBy(i => i.SortOrder))
             .Where(p => p.UserId == GetUserId())
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(search))
+            query = query.Where(p => p.Name.ToLower().Contains(search.ToLower()));
+
+        query = (sortBy, sortDir?.ToLower()) switch
+        {
+            ("category", "desc") => query.OrderByDescending(p => p.Category),
+            ("category", _)      => query.OrderBy(p => p.Category),
+            ("status",   "desc") => query.OrderBy(p => p.Inventory > 0),
+            ("status",   _)      => query.OrderByDescending(p => p.Inventory > 0),
+            _                    => query.OrderByDescending(p => p.Id)
+        };
+
+        if (page.HasValue)
+        {
+            var totalCount = await query.CountAsync();
+            var items = await query
+                .Skip((page.Value - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+            return Ok(new { items, totalCount });
+        }
+
+        return Ok(await query.ToListAsync());
+    }
+
+    [HttpGet("stats")]
+    public async Task<IActionResult> GetStats()
+    {
+        var userId = GetUserId();
+        var baseQuery = _db.Products.Where(p => p.UserId == userId);
+
+        var total = await baseQuery.CountAsync();
+        var active = await baseQuery.CountAsync(p => p.Inventory > 0);
+
+        var byCategory = await baseQuery
+            .GroupBy(p => p.Category)
+            .Select(g => new { category = g.Key, count = g.Count() })
+            .OrderByDescending(x => x.count)
             .ToListAsync();
-        return Ok(products);
+
+        var recentlyAdded = await baseQuery
+            .OrderByDescending(p => p.Id)
+            .Take(5)
+            .Select(p => new { p.Id, p.Name, p.CreatedAt })
+            .ToListAsync();
+
+        return Ok(new
+        {
+            total,
+            active,
+            outOfStock = total - active,
+            byCategory,
+            recentlyAdded
+        });
     }
 
     [HttpGet("{id}")]

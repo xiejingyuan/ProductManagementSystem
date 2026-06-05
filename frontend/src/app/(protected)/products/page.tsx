@@ -1,10 +1,28 @@
+import { Suspense } from "react";
 import Link from "next/link";
-import type { Product } from "@/lib/types";
+import type { Product, PagedResult } from "@/lib/types";
 import { serverFetch } from "@/lib/server-api";
 import ProductTable from "./ProductTable";
 
-export default async function ProductsPage() {
-  const products = await serverFetch<Product[]>("/api/products");
+const PAGE_SIZE = 25;
+
+export default async function ProductsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string; search?: string; sortBy?: string; sortDir?: string }>;
+}) {
+  const params = await searchParams;
+  const page = Math.max(1, parseInt(params.page ?? "1") || 1);
+  const search = params.search ?? "";
+  const sortBy = params.sortBy ?? "";
+  const sortDir = (params.sortDir ?? "asc") as "asc" | "desc";
+
+  const query = new URLSearchParams({ page: String(page), pageSize: String(PAGE_SIZE) });
+  if (search) query.set("search", search);
+  if (sortBy) query.set("sortBy", sortBy);
+  if (sortDir !== "asc") query.set("sortDir", sortDir);
+
+  const result = await serverFetch<PagedResult<Product>>(`/api/products?${query}`);
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-8">
@@ -17,7 +35,17 @@ export default async function ProductsPage() {
           + New Product
         </Link>
       </div>
-      <ProductTable products={products} />
+      <Suspense>
+        <ProductTable
+          items={result.items}
+          totalCount={result.totalCount}
+          page={page}
+          pageSize={PAGE_SIZE}
+          search={search}
+          sortBy={sortBy}
+          sortDir={sortDir}
+        />
+      </Suspense>
     </div>
   );
 }

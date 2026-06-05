@@ -34,6 +34,19 @@ export type AiDescriptionResponse = {
   description: string;
 };
 
+export type DashboardStats = {
+  total: number;
+  active: number;
+  outOfStock: number;
+  byCategory: { category: string; count: number }[];
+  recentlyAdded: { id: number; name: string; createdAt: string }[];
+};
+
+export type PagedResult<T> = {
+  items: T[];
+  totalCount: number;
+};
+
 export type ActiveSession = {
   id: number;
   deviceInfo: string;
