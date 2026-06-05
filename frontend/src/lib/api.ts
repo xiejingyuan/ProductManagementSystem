@@ -1,19 +1,29 @@
 const BASE = "/api";
 
+interface CloudinarySignature {
+  signature: string;
+  timestamp: number;
+  apiKey: string;
+  cloudName: string;
+}
+
+export interface CloudinaryUploadResult {
+  secure_url: string;
+  public_id: string;
+  resource_type: string;
+}
+
 async function request<T>(
   path: string,
   options: RequestInit = {},
   redirectOn401 = true,
 ): Promise<T> {
-  const isFormData = options.body instanceof FormData;
   const res = await fetch(`${BASE}${path}`, {
     ...options,
-    headers: isFormData
-      ? (options.headers ?? {})
-      : {
-          "Content-Type": "application/json",
-          ...(options.headers ?? {}),
-        },
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers ?? {}),
+    },
   });
 
   if (res.status === 401) {
@@ -43,6 +53,29 @@ async function request<T>(
   return res.json() as Promise<T>;
 }
 
+export async function uploadToCloudinary(
+  file: File,
+  sig: CloudinarySignature,
+): Promise<CloudinaryUploadResult> {
+  const fd = new FormData();
+  fd.append("file", file);
+  fd.append("api_key", sig.apiKey);
+  fd.append("timestamp", String(sig.timestamp));
+  fd.append("signature", sig.signature);
+
+  const res = await fetch(
+    `https://api.cloudinary.com/v1_1/${sig.cloudName}/auto/upload`,
+    { method: "POST", body: fd },
+  );
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(body?.error?.message ?? "Cloudinary upload failed");
+  }
+
+  return res.json();
+}
+
 export const api = {
   get: <T>(path: string) => request<T>(path),
   post: <T>(path: string, body: unknown) =>
@@ -52,8 +85,7 @@ export const api = {
   delete: (path: string) => request<void>(path, { method: "DELETE" }),
   postNoRedirect: <T>(path: string, body: unknown) =>
     request<T>(path, { method: "POST", body: JSON.stringify(body) }, false),
-  upload: <T>(path: string, formData: FormData) =>
-    request<T>(path, { method: "POST", body: formData }),
+  getUploadSignature: () => request<CloudinarySignature>("/product-images/upload-signature"),
 };
 
 export async function saveToken(token: string): Promise<void> {

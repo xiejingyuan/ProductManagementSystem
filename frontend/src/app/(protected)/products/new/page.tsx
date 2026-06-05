@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { api } from "@/lib/api";
+import { api, uploadToCloudinary } from "@/lib/api";
 import type { Product, ProductImage, AiDescriptionResponse } from "@/lib/types";
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024;   // 50 MB per file
@@ -112,15 +112,38 @@ export default function NewProductPage() {
         description: description || null,
       });
 
-      const fd = new FormData();
-      fd.append("file", mainImageFile);
-      fd.append("isMain", "true");
-      await api.upload<ProductImage>(`/product-images/${product.id}`, fd);
+      const sig = await api.getUploadSignature();
+
+      const mainResult = await uploadToCloudinary(mainImageFile, sig);
+      await api.post<ProductImage>(`/product-images/${product.id}`, {
+        url: mainResult.secure_url,
+        publicId: mainResult.public_id,
+        resourceType: mainResult.resource_type,
+        isMain: true,
+      });
 
       if (galleryFiles.length > 0) {
-        const gfd = new FormData();
-        for (const file of galleryFiles) gfd.append("files", file);
-        await api.upload(`/product-images/${product.id}/batch`, gfd);
+        const successful: { url: string; publicId: string; resourceType: string }[] = [];
+        const failed: string[] = [];
+
+        for (const file of galleryFiles) {
+          try {
+            const r = await uploadToCloudinary(file, sig);
+            successful.push({ url: r.secure_url, publicId: r.public_id, resourceType: r.resource_type });
+          } catch {
+            failed.push(file.name);
+          }
+        }
+
+        if (successful.length > 0) {
+          await api.post(`/product-images/${product.id}/batch`, successful);
+        }
+
+        if (failed.length > 0) {
+          setError(`Some gallery files failed to upload: ${failed.join(", ")}. Add them again from the edit page.`);
+          router.push(`/products/${product.id}/edit`);
+          return;
+        }
       }
 
       router.push("/dashboard");
