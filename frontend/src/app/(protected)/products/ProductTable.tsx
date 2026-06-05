@@ -74,10 +74,10 @@ export default function ProductTable({ items, totalCount, page, pageSize, search
     try {
       await api.delete(`/products/${id}`);
       const remaining = products.filter(p => p.id !== id);
-      setProducts(remaining);
       if (remaining.length === 0 && page > 1) {
         navigate({ page: page - 1 });
       } else {
+        setProducts(remaining);
         router.refresh();
       }
     } catch (err) {
