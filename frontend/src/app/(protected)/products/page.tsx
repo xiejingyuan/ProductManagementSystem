@@ -4,7 +4,7 @@ import type { Product, PagedResult } from "@/lib/types";
 import { serverFetch } from "@/lib/server-api";
 import ProductTable from "./ProductTable";
 
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 10;
 
 export default async function ProductsPage({
   searchParams,
