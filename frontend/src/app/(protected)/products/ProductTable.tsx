@@ -73,8 +73,13 @@ export default function ProductTable({ items, totalCount, page, pageSize, search
     if (!confirm("Delete this product?")) return;
     try {
       await api.delete(`/products/${id}`);
-      setProducts(prev => prev.filter(p => p.id !== id));
-      router.refresh();
+      const remaining = products.filter(p => p.id !== id);
+      setProducts(remaining);
+      if (remaining.length === 0 && page > 1) {
+        navigate({ page: page - 1 });
+      } else {
+        router.refresh();
+      }
     } catch (err) {
       alert(err instanceof Error ? err.message : "Delete failed");
     }
